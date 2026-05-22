@@ -92,4 +92,33 @@ public class PasswordValidatorTest {
     void shouldRejectNullAndEmptyWithNullAndEmptySource(String password) {
         assertFalse(validator.isValid(password));
     }
+
+    @Test
+    void shouldReturnZeroStrengthScoreForNull() {
+        assertEquals(0, validator.getStrengthScore(null));
+    }
+
+    @Test
+    void shouldReturnMaxStrengthScoreForStrongPassword() {
+        assertEquals(5, validator.getStrengthScore("Password1!"));
+    }
+
+    @Test
+    void shouldReturnPartialStrengthScoreForShortPassword() {
+        assertEquals(3, validator.getStrengthScore("short1!"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "Password1!, 5",
+            "Admin2024@, 5",
+            "short1!, 3",
+            "PASSWORD1!, 4",
+            "password1!, 4",
+            "Password!, 4",
+            "Password1, 4"
+    })
+    void shouldReturnExpectedStrengthScoreWithCsvSource(String password, int expectedScore) {
+        assertEquals(expectedScore, validator.getStrengthScore(password));
+    }
 }

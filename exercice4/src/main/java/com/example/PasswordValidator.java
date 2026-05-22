@@ -30,6 +30,29 @@ public class PasswordValidator {
         return "Password is valid";
     }
 
+    public int getStrengthScore(String password) {
+        if (password == null) {
+            return 0;
+        }
+        int score = 0;
+        if (password.length() >= 8) {
+            score++;
+        }
+        if (containsLowercase(password)) {
+            score++;
+        }
+        if (containsUppercase(password)) {
+            score++;
+        }
+        if (containsDigit(password)) {
+            score++;
+        }
+        if (containsSpecialCharacter(password)) {
+            score++;
+        }
+        return score;
+    }
+
     private boolean containsLowercase(String password) {
         for (char c : password.toCharArray()) {
             if (Character.isLowerCase(c)) {
