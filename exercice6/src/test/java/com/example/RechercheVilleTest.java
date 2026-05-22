@@ -14,6 +14,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,7 +34,7 @@ class RechercheVilleTest {
 
     @BeforeEach
     void setUp() {
-        when(sourceVilles.getVilles()).thenReturn(TOUTES_LES_VILLES);
+        lenient().when(sourceVilles.getVilles()).thenReturn(TOUTES_LES_VILLES);
         rechercheVille = new RechercheVille(sourceVilles);
     }
 
