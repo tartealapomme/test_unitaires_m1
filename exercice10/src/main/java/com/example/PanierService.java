@@ -13,14 +13,34 @@ public class PanierService {
     }
 
     public boolean ajouterProduit(String commandeId, String referenceProduit) {
-        throw new NotImplementedException();
+        Optional<Commande> commandeOpt = commandeRepository.findById(commandeId);
+        if (commandeOpt.isEmpty() || produitRepository.findByReference(referenceProduit).isEmpty()) {
+            return false;
+        }
+        Commande commande = commandeOpt.get();
+        commande.definirQuantite(referenceProduit, commande.getQuantite(referenceProduit) + 1);
+        commandeRepository.save(commande);
+        return true;
     }
 
     public boolean supprimerProduit(String commandeId, String referenceProduit) {
-        throw new NotImplementedException();
+        Optional<Commande> commandeOpt = commandeRepository.findById(commandeId);
+        if (commandeOpt.isEmpty()) {
+            return false;
+        }
+        Commande commande = commandeOpt.get();
+        if (!commande.contientProduit(referenceProduit)) {
+            return false;
+        }
+        commande.definirQuantite(referenceProduit, commande.getQuantite(referenceProduit) - 1);
+        commandeRepository.save(commande);
+        return true;
     }
 
     public Optional<String> validerCommande(String commandeId) {
-        throw new NotImplementedException();
+        if (commandeRepository.findById(commandeId).isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of("Commande validée");
     }
 }

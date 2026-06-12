@@ -11,14 +11,14 @@ public class CatalogueService {
     }
 
     public List<Produit> rechercherParMotCle(String motCle) {
-        throw new NotImplementedException();
+        return produitRepository.findByMotCle(motCle);
     }
 
     public List<Produit> rechercherParPrixMaximum(double prixMaximum) {
-        throw new NotImplementedException();
+        return produitRepository.findByPrixMaximum(prixMaximum);
     }
 
     public List<Produit> trouverParCategorie(String categorie) {
-        throw new NotImplementedException();
+        return produitRepository.findByCategorie(categorie);
     }
 }

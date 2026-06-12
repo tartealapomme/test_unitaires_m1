@@ -16,10 +16,19 @@ public class AuthService {
     }
 
     public Optional<String> creerCompte(String email, String nomUtilisateur, String motDePasse) {
-        throw new NotImplementedException();
+        if (utilisateurRepository.existsByNomUtilisateur(nomUtilisateur)) {
+            return Optional.empty();
+        }
+        utilisateurRepository.save(new Utilisateur(email, nomUtilisateur, motDePasse));
+        return Optional.of("Compte créé avec succès");
     }
 
     public Optional<String> connecter(String nomUtilisateur, String motDePasse) {
-        throw new NotImplementedException();
+        Optional<Utilisateur> utilisateur = utilisateurRepository.findByNomUtilisateur(nomUtilisateur);
+        if (utilisateur.isEmpty() || !utilisateur.get().getMotDePasse().equals(motDePasse)) {
+            dernierMessageErreur = "Identifiants invalides";
+            return Optional.empty();
+        }
+        return Optional.of("Page d'accueil");
     }
 }
