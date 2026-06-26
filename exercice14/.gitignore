@@ -1,0 +1,7 @@
+target/
+.idea/
+*.iml
+.vscode/
+jacoco-report/
+cucumber-report.html
+cucumber-report.json
