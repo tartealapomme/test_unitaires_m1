@@ -40,7 +40,8 @@ public class ReservationSteps {
         pretRepository = new InMemoryPretRepository();
         reservationRepository = new InMemoryReservationRepository();
         pretService = new PretService(pretRepository, adherentRepository, ouvrageRepository);
-        reservationService = new ReservationService(reservationRepository, pretRepository, pretService);
+        reservationService = new ReservationService(
+                reservationRepository, pretRepository, adherentRepository, pretService);
         reservationAcceptee = false;
         empruntAccepte = false;
         derniereErreur = null;

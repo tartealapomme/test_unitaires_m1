@@ -1,12 +1,16 @@
 package com.example.service;
 
+import com.example.exception.AdherentSuspenduException;
+import com.example.exception.OuvrageDisponibleException;
 import com.example.exception.OuvrageIndisponibleException;
 import com.example.model.Adherent;
 import com.example.model.Ouvrage;
 import com.example.model.Pret;
+import com.example.model.Reservation;
 import com.example.repository.AdherentRepository;
 import com.example.repository.OuvrageRepository;
 import com.example.repository.PretRepository;
+import com.example.repository.ReservationRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -73,6 +77,18 @@ class PretServiceTest {
     }
 
     @Test
+    void shouldRejectLoan_whenAdherentIsSuspended() {
+        Adherent adherent = new Adherent("A1", "Alice");
+        adherent.setSuspendu(true);
+        when(adherentRepository.findById("A1")).thenReturn(Optional.of(adherent));
+
+        assertThatThrownBy(() -> pretService.creerPret("A1", "978-1"))
+                .isInstanceOf(AdherentSuspenduException.class);
+
+        verify(pretRepository, never()).save(any());
+    }
+
+    @Test
     void shouldCalculatePenaltyAt015PerDay_whenReturnIsLate() {
         Pret pret = new Pret("P1", "A1", "978-1",
                 LocalDate.of(2025, 1, 1), LocalDate.of(2025, 1, 22));
@@ -80,6 +96,16 @@ class PretServiceTest {
         BigDecimal penalite = pretService.calculerPenalite(pret, LocalDate.of(2025, 1, 25));
 
         assertThat(penalite).isEqualByComparingTo(new BigDecimal("0.45"));
+    }
+
+    @Test
+    void shouldReturnZeroPenalty_whenReturnIsOnTime() {
+        Pret pret = new Pret("P1", "A1", "978-1",
+                LocalDate.of(2025, 1, 1), LocalDate.of(2025, 1, 22));
+
+        BigDecimal penalite = pretService.calculerPenalite(pret, LocalDate.of(2025, 1, 22));
+
+        assertThat(penalite).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.example.service;
 
+import com.example.exception.AdherentSuspenduException;
 import com.example.exception.OuvrageIndisponibleException;
 import com.example.model.Adherent;
 import com.example.model.Pret;
@@ -15,8 +16,8 @@ import java.util.UUID;
 public class PretService {
 
     private static final int DUREE_PRET_JOURS = 21;
-    private static final BigDecimal PENALITE_PAR_JOUR = new BigDecimal("0.10");
-    private static final int SEUIL_RETARDS_SUSPENSION = 2;
+    private static final BigDecimal PENALITE_PAR_JOUR = new BigDecimal("0.15");
+    private static final int SEUIL_RETARDS_SUSPENSION = 3;
 
     private final PretRepository pretRepository;
     private final AdherentRepository adherentRepository;
@@ -33,6 +34,9 @@ public class PretService {
     public Pret creerPret(String adherentId, String ouvrageIsbn) {
         Adherent adherent = adherentRepository.findById(adherentId)
                 .orElseThrow(() -> new IllegalArgumentException("Adhérent introuvable"));
+        if (adherent.isSuspendu()) {
+            throw new AdherentSuspenduException(adherentId);
+        }
         ouvrageRepository.findByIsbn(ouvrageIsbn)
                 .orElseThrow(() -> new IllegalArgumentException("Ouvrage introuvable"));
 
