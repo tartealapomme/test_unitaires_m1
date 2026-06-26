@@ -1,0 +1,80 @@
+name: Exercice 14 - MediaCity CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'exercice14/**'
+      - '.github/workflows/exercice14-ci.yml'
+
+  pull_request:
+    branches:
+      - main
+      - master
+    paths:
+      - 'exercice14/**'
+      - '.github/workflows/exercice14-ci.yml'
+
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: exercice14
+
+jobs:
+  test-and-reports:
+    name: Tests, couverture, Cucumber et site Maven
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code du dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer Java 17 avec cache Maven
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Vérifier Java et Maven
+        run: |
+          java -version
+          mvn -version
+
+      - name: Lancer les tests, la couverture et le site Maven
+        run: mvn clean verify site
+
+      - name: Publier les rapports Surefire
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exercice14-surefire-reports
+          path: exercice14/target/surefire-reports/**
+          if-no-files-found: warn
+
+      - name: Publier le rapport JaCoCo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exercice14-rapport-jacoco
+          path: exercice14/target/site/jacoco/**
+          if-no-files-found: warn
+
+      - name: Publier les rapports Cucumber
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exercice14-rapports-cucumber
+          path: exercice14/target/cucumber-reports/**
+          if-no-files-found: warn
+
+      - name: Publier le site Maven
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exercice14-site-maven
+          path: exercice14/target/site/**
+          if-no-files-found: warn

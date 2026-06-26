@@ -34,6 +34,8 @@ public class PretService {
     public Pret creerPret(String adherentId, String ouvrageIsbn) {
         Adherent adherent = adherentRepository.findById(adherentId)
                 .orElseThrow(() -> new IllegalArgumentException("Adhérent introuvable"));
+        adherent.actualiserPourAnnee(LocalDate.now().getYear());
+        adherentRepository.save(adherent);
         if (adherent.isSuspendu()) {
             throw new AdherentSuspenduException(adherentId);
         }
@@ -66,7 +68,8 @@ public class PretService {
         long joursRetard = ChronoUnit.DAYS.between(pret.getDateRetourPrevue(), dateRetourEffective);
         if (joursRetard > 0) {
             Adherent adherent = adherentRepository.findById(pret.getAdherentId()).orElseThrow();
-            adherent.incrementerRetardImportant();
+            int annee = dateRetourEffective.getYear();
+            adherent.incrementerRetardImportant(annee);
             if (adherent.getRetardsImportants() >= SEUIL_RETARDS_SUSPENSION) {
                 adherent.setSuspendu(true);
             }

@@ -33,6 +33,8 @@ public class ReservationService {
     public Reservation reserver(String adherentId, String ouvrageIsbn) {
         Adherent adherent = adherentRepository.findById(adherentId)
                 .orElseThrow(() -> new IllegalArgumentException("Adhérent introuvable"));
+        adherent.actualiserPourAnnee(LocalDate.now().getYear());
+        adherentRepository.save(adherent);
         if (adherent.isSuspendu()) {
             throw new AdherentSuspenduException(adherentId);
         }
