@@ -7,4 +7,6 @@ import java.util.Optional;
 public interface AdherentRepository {
 
     Optional<Adherent> findById(String id);
+
+    Adherent save(Adherent adherent);
 }

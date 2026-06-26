@@ -5,11 +5,13 @@ public class Adherent {
     private final String id;
     private final String nom;
     private boolean suspendu;
+    private int retardsImportants;
 
     public Adherent(String id, String nom) {
         this.id = id;
         this.nom = nom;
         this.suspendu = false;
+        this.retardsImportants = 0;
     }
 
     public String getId() {
@@ -26,5 +28,13 @@ public class Adherent {
 
     public void setSuspendu(boolean suspendu) {
         this.suspendu = suspendu;
+    }
+
+    public int getRetardsImportants() {
+        return retardsImportants;
+    }
+
+    public void incrementerRetardImportant() {
+        retardsImportants++;
     }
 }

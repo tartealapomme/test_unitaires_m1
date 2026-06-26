@@ -1,5 +1,6 @@
 package com.example.service;
 
+import com.example.exception.OuvrageIndisponibleException;
 import com.example.model.Adherent;
 import com.example.model.Ouvrage;
 import com.example.model.Pret;
@@ -12,12 +13,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -37,19 +41,83 @@ class PretServiceTest {
     private PretService pretService;
 
     @Test
-    void shouldCreateLoan_whenAdherentAndBookExist() {
+    void shouldCreateLoanWithReturnDateIn21Days_whenAdherentAndBookExist() {
         when(adherentRepository.findById("A1"))
                 .thenReturn(Optional.of(new Adherent("A1", "Alice")));
         when(ouvrageRepository.findByIsbn("978-1"))
                 .thenReturn(Optional.of(new Ouvrage("978-1", "Le Petit Prince")));
+        when(pretRepository.findEnCoursByOuvrageIsbn("978-1")).thenReturn(List.of());
         when(pretRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         Pret pret = pretService.creerPret("A1", "978-1");
 
-        assertNotNull(pret);
-        assertEquals("A1", pret.getAdherentId());
-        assertEquals("978-1", pret.getOuvrageIsbn());
-        assertEquals(LocalDate.now().plusDays(21), pret.getDateRetourPrevue());
-        verify(pretRepository).save(any());
+        assertThat(pret.getAdherentId()).isEqualTo("A1");
+        assertThat(pret.getOuvrageIsbn()).isEqualTo("978-1");
+        assertThat(pret.getDateRetourPrevue()).isEqualTo(LocalDate.now().plusDays(21));
+    }
+
+    @Test
+    void shouldRejectLoan_whenBookIsAlreadyBorrowed() {
+        Pret pretEnCours = new Pret("P1", "A2", "978-1",
+                LocalDate.now(), LocalDate.now().plusDays(21));
+        when(adherentRepository.findById("A1"))
+                .thenReturn(Optional.of(new Adherent("A1", "Alice")));
+        when(ouvrageRepository.findByIsbn("978-1"))
+                .thenReturn(Optional.of(new Ouvrage("978-1", "Le Petit Prince")));
+        when(pretRepository.findEnCoursByOuvrageIsbn("978-1")).thenReturn(List.of(pretEnCours));
+
+        assertThatThrownBy(() -> pretService.creerPret("A1", "978-1"))
+                .isInstanceOf(OuvrageIndisponibleException.class);
+
+        verify(pretRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldCalculatePenaltyAt015PerDay_whenReturnIsLate() {
+        Pret pret = new Pret("P1", "A1", "978-1",
+                LocalDate.of(2025, 1, 1), LocalDate.of(2025, 1, 22));
+
+        BigDecimal penalite = pretService.calculerPenalite(pret, LocalDate.of(2025, 1, 25));
+
+        assertThat(penalite).isEqualByComparingTo(new BigDecimal("0.45"));
+    }
+
+    @Test
+    void shouldNotSuspendAdherent_beforeThreeImportantLateReturns() {
+        Adherent adherent = new Adherent("A1", "Alice");
+        when(adherentRepository.findById("A1")).thenReturn(Optional.of(adherent));
+        when(adherentRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Pret pret1 = new Pret("P1", "A1", "978-1", LocalDate.now(), LocalDate.now().plusDays(21));
+        Pret pret2 = new Pret("P2", "A1", "978-2", LocalDate.now(), LocalDate.now().plusDays(21));
+
+        when(pretRepository.findById("P1")).thenReturn(Optional.of(pret1));
+        when(pretRepository.findById("P2")).thenReturn(Optional.of(pret2));
+
+        pretService.retournerPret("P1", LocalDate.now().plusDays(22));
+        pretService.retournerPret("P2", LocalDate.now().plusDays(22));
+
+        assertThat(adherent.isSuspendu()).isFalse();
+    }
+
+    @Test
+    void shouldSuspendAdherent_afterThreeImportantLateReturns() {
+        Adherent adherent = new Adherent("A1", "Alice");
+        when(adherentRepository.findById("A1")).thenReturn(Optional.of(adherent));
+        when(adherentRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Pret pret1 = new Pret("P1", "A1", "978-1", LocalDate.now(), LocalDate.now().plusDays(21));
+        Pret pret2 = new Pret("P2", "A1", "978-2", LocalDate.now(), LocalDate.now().plusDays(21));
+        Pret pret3 = new Pret("P3", "A1", "978-3", LocalDate.now(), LocalDate.now().plusDays(21));
+
+        when(pretRepository.findById("P1")).thenReturn(Optional.of(pret1));
+        when(pretRepository.findById("P2")).thenReturn(Optional.of(pret2));
+        when(pretRepository.findById("P3")).thenReturn(Optional.of(pret3));
+
+        pretService.retournerPret("P1", LocalDate.now().plusDays(22));
+        pretService.retournerPret("P2", LocalDate.now().plusDays(22));
+        pretService.retournerPret("P3", LocalDate.now().plusDays(22));
+
+        assertThat(adherent.isSuspendu()).isTrue();
     }
 }
